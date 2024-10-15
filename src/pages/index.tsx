@@ -1,11 +1,61 @@
-// CSS Module
 import style from "./index.module.css";
+import SearchableLayout from "@/components/searchable-layout";
+import { ReactNode } from "react";
+import BookItem from "@/components/book-item";
+import { InferGetStaticPropsType } from "next";
+import fetchBooks from "@/lib/fetch-books";
+import fetchRandomBooks from "@/lib/fetch-random-books";
+import Head from "next/head";
 
-export default function Home() {
+export const getStaticProps = async () => {
+  // 컴포넌트보다 먼저 실행되어서, 컴포넌트에 필요한 데이터 불러오는 함수
+  const [allBooks, recoBooks] = await Promise.all([
+    fetchBooks(),
+    fetchRandomBooks(),
+  ]);
+
+  return {
+    props: {
+      allBooks,
+      recoBooks,
+    },
+  };
+};
+
+export default function Home({
+  allBooks,
+  recoBooks,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
   return (
     <>
-      <h1 className={style.h1}>인덱스</h1>
-      <h2 className={style.h2}>H2</h2>
+      <Head>
+        <title>한입북스</title>
+        <meta property="og:image" content="/thumbnail.png" />
+        <meta property="og:title" content="한입북스" />
+        <meta
+          property="og:description"
+          content="한입 북스에 등록된 도서들을 만나보세요"
+        />
+      </Head>
+      <div className={style.container}>
+        <section>
+          <h3>지금 추천하는 도서</h3>
+          {recoBooks.map((book) => (
+            <BookItem key={book.id} {...book} />
+          ))}
+        </section>
+        <section>
+          <h3>등록된 모든 도서</h3>
+          {allBooks.map((book) => (
+            <BookItem key={book.id} {...book} />
+          ))}
+        </section>
+      </div>
     </>
   );
 }
+
+// getLayout을 호출하면 인수로 page 컴포넌트를 전달하면 이러한 레이아웃으로 리턴해준다
+Home.getLayout = (page: ReactNode) => {
+  return <SearchableLayout>{page}</SearchableLayout>;
+};
